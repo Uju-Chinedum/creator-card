@@ -53,7 +53,7 @@ function generateSuffix() {
   return suffix;
 }
 
-async function createCreatorCard(serviceData) {
+async function createCreatorCard(serviceData, options = {}) {
   let response;
   const data = validator.validate(serviceData, parsedSpec);
 

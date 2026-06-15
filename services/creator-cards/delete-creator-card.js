@@ -6,30 +6,26 @@ const CreatorCardMessages = require('@app/messages/creator-card');
 
 const spec = `root {
   slug string<trim|minLength:5|maxLength:50>
-  access_code? string<trim>
+  creator_reference string<trim>
 }`;
 
 const parsedSpec = validator.parse(spec);
 
-async function getCreatorCard(serviceData, options = {}) {
+async function deleteCreatorCard(serviceData, options = {}) {
   let response;
   const data = validator.validate(serviceData, parsedSpec);
 
   try {
     const card = await CreatorCard.findOne({ query: { slug: data.slug, deleted: null } });
-
     if (!card) {
       throwAppError(CreatorCardMessages.CARD_NOT_FOUND, 'NF01');
     }
-    if (card.status === 'draft') {
-      throwAppError(CreatorCardMessages.CARD_NOT_FOUND, 'NF02');
-    }
-    if (card.access_type === 'private' && !data.access_code) {
-      throwAppError(CreatorCardMessages.ACCESS_CODE_MISSING, 'AC03');
-    }
-    if (card.access_type === 'private' && data.access_code !== card.access_code) {
-      throwAppError(CreatorCardMessages.ACCESS_CODE_INVALID, 'AC04');
-    }
+
+    const now = Date.now();
+    await CreatorCard.updateOne({
+      query: { slug: data.slug },
+      updateValues: { deleted: now, updated: now },
+    });
 
     response = {
       id: card._id,
@@ -41,16 +37,17 @@ async function getCreatorCard(serviceData, options = {}) {
       service_rates: card.service_rates,
       status: card.status,
       access_type: card.access_type,
+      access_code: card.access_code,
       created: card.created,
-      updated: card.updated,
-      deleted: card.deleted,
+      updated: now,
+      deleted: now,
     };
   } catch (error) {
-    appLogger.errorX(error, 'get-creator-card-error');
+    appLogger.errorX(error, 'delete-creator-card-error');
     throw error;
   }
 
   return response;
 }
 
-module.exports = getCreatorCard;
+module.exports = deleteCreatorCard;
