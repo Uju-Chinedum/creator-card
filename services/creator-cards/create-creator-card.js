@@ -75,7 +75,7 @@ async function createCreatorCard(serviceData, options = {}) {
     let slug;
     if (data.slug) {
       // Client provided slug
-      const existing = await CreatorCard.findOne({ query: { slug: data.slug, deleted: null } });
+      const existing = await CreatorCard.findOne({ query: { slug: data.slug } });
       if (existing) {
         throwAppError(CreatorCardMessages.SLUG_TAKEN, 'SL02');
       }
@@ -128,6 +128,10 @@ async function createCreatorCard(serviceData, options = {}) {
       deleted: card.deleted,
     };
   } catch (error) {
+    if (error.code === 11000) {
+      throwAppError(CreatorCardMessages.SLUG_TAKEN, 'SL02');
+    }
+
     appLogger.errorX(error, 'create-creator-card-error');
     throw error;
   }
